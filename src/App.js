@@ -1,108 +1,130 @@
 import { useState } from "react";
-// const initialItems = [
-//   {id: 1, description: "passports", quantity: 2, packed: false },
-//   {id: 2, description: "socks", quantity: 12, packed: true},
-//   {id: 3, description: "Power bank", quantity: 1, packed: true}
-// ];
 
 export default function App() {
-  const [items, setItems] = useState([]);
+  const [prayers, setPrayers] = useState([]);
 
-  function handleAddItems(item) {
-    setItems((items) => [...items, item]);
+  function handleAddPrayers(prayer) {
+    setPrayers((prayers) => [...prayers, prayer]);
   }
 
-  function deleteItem(id) {
-    setItems((items) => items.filter((item) => item.id !== id));
+  function handleDeletePrayer(id) {
+    setPrayers((prayers) => prayers.filter((prayer) => prayer.id !== id));
+  }
+
+  function handleUpdatePrayer(id) {
+    setPrayers((prayers) =>
+      prayers.map((prayer) =>
+        prayer.id === id ? { ...prayer, completed: !prayer.completed } : prayer
+      )
+    );
   }
 
   return (
-    <div className="App">
+    <div className="app">
       <Logo />
-      <Form onAddItems={handleAddItems} />
-      <PackingList items={items} onDeleteItem={deleteItem} />
-      <Stats />
+      <Form onAddPrayers={handleAddPrayers} />
+      <PrayerList
+        prayers={prayers}
+        onDeletePrayer={handleDeletePrayer}
+        onUpdatePrayer={handleUpdatePrayer}
+      />
+      <Stats prayers={prayers} />
     </div>
   );
 }
-         
 
-          function Logo() {
-            return <h1>💼 Jalan KUY ✈️</h1>;
-          }
+function Logo() {
+  return (
+    <div>
+      <h1> 🕌 Catatan Sholat ☪</h1>
+    </div>
+  );
+}
 
-          function Form({onAddItems}) {
+function Form({ onAddPrayers }) {
+  const [description, setDescription] = useState("");
 
-            const [description, setDescription] = useState("");
-            const [quantity, setQuantity] = useState(1);
+  function handleSubmit(e) {
+    e.preventDefault();
 
-            function handleSubmit(e) {
-              e.preventDefault();
+    if (!description) return;
 
-              if (!description) return;
+    const newPrayer = { description, completed: false, id: Date.now() };
+    console.log(newPrayer); 
 
-              const newItem = {description, quantity, packed: false, id: Date.now () };
-              console.log(newItem);
+   
+    onAddPrayers(newPrayer);
 
-              onAddItems(newItem);
+    setDescription("");
+  }
 
-              setDescription("")
-              setQuantity(1);
-            }
-
-            return( 
-            <form className="add-form" onSubmit={handleSubmit}>
-              <h3>Apa aja yang dibawa? 🤔</h3>
-              <h3>Yuk cheklist Barang 😁📝</h3>
-              <select
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                >
-                {Array.from ({ length: 20 }, (_, i) => i + 1).map((num) =>(
-                  <option value={num}>{num}</option>
-                ))}
-              </select>
-              <input type="text" 
-              placeholder="Barang yang mau dibawa"
-              value={description}
+  return (
+    <form className="add-form" onSubmit={handleSubmit}>
+      <h3>Yuk Checklist Sholat Hari Ini 😁📝</h3>
+      <input
+        type="text"
+        placeholder="Sholat yang mau dilakukan"
+        value={description}
         onChange={(e) => setDescription(e.target.value)}
-        />
-              <button>Bawa</button>
-              </form>
-        
-            );
-          }
+      />
+      <button>Lakukan</button>
+    </form>
+  );
+}
 
-          function PackingList({ items, onDeleteItem }) {
-            return (
-              <div className="list">
-                <ul>
-                  {items.map((item) => (
-                    <Item item={item} key={item.id} onDeleteItem={onDeleteItem} />
-                  ))}
-                </ul>
-              </div>
-            );
-          }
-          
-          function Item({ item, onDeleteItem }) {
-            return (
-              <li>
-                <span style={item.packed ? { textDecoration: "line-through" } : {}}>
-                  {item.quantity} {item.description}
-                </span>
-                <button onClick={() => onDeleteItem(item.id)}>❌</button>
-              </li>
-            );
-          }
+function PrayerList({ prayers, onDeletePrayer, onUpdatePrayer }) {
+  return (
+    <div className="list">
+      <ul>
+        {prayers.map((prayer) => (
+          <Item
+            prayer={prayer}
+            key={prayer.id}
+            onDeletePrayer={onDeletePrayer}
+            onUpdatePrayer={onUpdatePrayer}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-          function Stats() {
-            return(
-              <footer className="stats">
-                <em>
-                  💼 Kamu punya 0 barang di daftar, dan sudah packing 0 barang (0%){" "} 
-                </em>
-              </footer>
-            );
-          }
-        
+function Item({ prayer, onDeletePrayer, onUpdatePrayer }) {
+  return (
+    <li>
+      <input
+        type="checkbox"
+        value={prayer.completed}
+        onChange={() => onUpdatePrayer(prayer.id)}
+      />
+    
+      <span style={prayer.completed ? { textDecoration: "line-through" } : {}}>
+        {prayer.description}
+      </span>
+      <button onClick={() => onDeletePrayer(prayer.id)}>❌</button>
+    </li>
+  );
+}
+
+function Stats({ prayers }) {
+  if (!prayers.length)
+    return (
+      <p className="stats">
+        <em>Mulai Tambahkan Sholat Hari Ini 😎</em>
+      </p>
+    );
+
+  const numPrayers = prayers.length;
+  const numCompleted = prayers.filter((prayer) => prayer.completed).length;
+  const percentage = Math.round((numCompleted / numPrayers) * 100);
+
+  return (
+    <footer className="stats">
+      <em>
+        {percentage === 100
+          ? "Selamat, kamu telah mengerjakan semua sholat hari ini 🎉"
+          : `🕌 Kamu punya ${numPrayers} sholat hari ini, dan sudah mengerjakan ${numCompleted} sholat (${percentage}%)`}
+      </em>
+    </footer>
+  );
+};
